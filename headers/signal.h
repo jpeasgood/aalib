@@ -40,8 +40,8 @@ namespace aa
 	class signal<void(Args...)>
 	{
 		private:
-			std::shared_ptr<std::map<unsigned int, std::function<void(Args...)>>> funcs;
 			unsigned int next_id;
+			std::shared_ptr<std::map<unsigned int, std::function<void(Args...)>>> funcs;
 
 		public:
 			signal();
@@ -63,8 +63,8 @@ namespace aa
 		friend class signal<Result(Args...)>;
 
 		private:
-			std::weak_ptr<std::map<unsigned int, std::function<Result(Args...)>>> connected_signal;
 			unsigned int connection_id;
+			std::weak_ptr<std::map<unsigned int, std::function<Result(Args...)>>> connected_signal;
 
 			connection(std::weak_ptr<std::map<unsigned int, std::function<Result(Args...)>>> signal, unsigned int id);
 
@@ -159,4 +159,4 @@ namespace aa
 	}
 }
 
-#endif AA_SIGNAL_H
+#endif

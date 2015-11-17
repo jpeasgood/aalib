@@ -25,10 +25,10 @@ int main()
 	aa::application app;
 	aa::window wnd1("aa1", 0, 0, 400, 400);
 	app.set_file_descriptor(wnd1);
-	aa::web_cam cam(*devices.begin(), *aa::web_cam::get_supported_formats(*devices.begin()).begin());
-	app.set_file_descriptor(cam);
-	aa::egl egl(wnd1);
-	cam.start_capturing();
+	//aa::web_cam cam(*devices.begin(), *aa::web_cam::get_supported_formats(*devices.begin()).begin());
+	//app.set_file_descriptor(cam);
+	//aa::egl egl(wnd1);
+	//cam.start_capturing();
 	app.run();
-	cam.stop_capturing();
+	//cam.stop_capturing();
 }

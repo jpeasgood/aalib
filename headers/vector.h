@@ -1,12 +1,15 @@
-#ifndef AA_MATRIX_H
-#define AA_MATRIX_H
+#ifndef AA_VECTOR_H
+#define AA_VECTOR_H
 
-#include "../headers/vector.h"
+#include "../headers/matrix.h"
 
 #include <memory>
 
 namespace aa
 {
+	template<typename T>
+	class matrix;
+
 	template<typename T>
 	class vector
 	{
@@ -46,7 +49,7 @@ namespace aa
 			bool operator!=(const vector<T> &other) const;
 
 			unsigned int size() const;
-			T *get_raw_ptr() const;
+			T *get_raw_ptr();
 	};
 
 	template<typename T>
@@ -96,7 +99,7 @@ aa::vector<T> &aa::vector<T>::operator=(const aa::vector<T> &other)
 {
 	if(this != &other)
 	{
-		element_ptr = shared_ptr<T>(new T[other.length], std::default_delete<T[]>());
+		element_ptr = std::shared_ptr<T>(new T[other.length], std::default_delete<T[]>());
 		offset = 0;
 		length = other.length;
 		T *p = element_ptr.get();
@@ -114,6 +117,7 @@ T aa::vector<T>::operator[](unsigned int i) const
 	return element_ptr.get()[offset + i];
 }
 
+template<typename T>
 T &aa::vector<T>::operator[](unsigned int i)
 {
 	return element_ptr.get()[offset + i];
@@ -217,6 +221,7 @@ bool aa::vector<T>::operator==(const aa::vector<T> &other) const
 		return false;
 	}
 	T *p = element_ptr.get();
+	T *q = other.element_ptr.get();
 	for(unsigned int i = 0; i < length; i++)
 	{
 		if(p[offset + i] != q[other.offset + i])
@@ -240,7 +245,7 @@ unsigned int aa::vector<T>::size() const
 }
 
 template<typename T>
-T *aa::vector<T>::get_raw_ptr() const
+T *aa::vector<T>::get_raw_ptr()
 {
 	return &element_ptr.get()[offset];
 }

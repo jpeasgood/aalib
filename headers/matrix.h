@@ -8,6 +8,9 @@
 namespace aa
 {
 	template<typename T>
+	class vector;
+
+	template<typename T>
 	class matrix
 	{
 		private:
@@ -40,7 +43,7 @@ namespace aa
 			unsigned int num_rows() const;
 			unsigned int num_cols() const;
 			matrix<T> transpose() const;
-			T *get_raw_ptr() const;
+			T *get_raw_ptr();
 	};
 }
 
@@ -82,7 +85,7 @@ aa::matrix<T> &aa::matrix<T>::operator=(const aa::matrix<T> &other)
 {
 	if(this != &other)
 	{
-		element_ptr = shared_ptr<T>(new T[other.rows * other.cols], std::default_delete<T[]>());
+		element_ptr = std::shared_ptr<T>(new T[other.rows * other.cols], std::default_delete<T[]>());
 		rows = other.rows;
 		cols = other.cols;
 		T *p = element_ptr.get();
@@ -110,7 +113,7 @@ aa::vector<T> aa::matrix<T>::operator[](unsigned int i) const
 }
 
 template<typename T>
-a::vector<T> &aa::matrix<T>::operator[](unsigned int i)
+aa::vector<T> &aa::matrix<T>::operator[](unsigned int i)
 {
 	return vector<T>(element_ptr, i * rows, rows);
 }
@@ -192,7 +195,7 @@ aa::matrix<T> &aa::matrix<T>::operator*=(const aa::matrix<T> &other)
 		throw std::runtime_error("Number of rows in a matrix must equal number of columns in the other when multiplying matrices.");
 	}
 	matrix<T> m(std::move(*this));
-	element_ptr = shared_ptr<T>(new T[m.rows * other.cols], std::default_delete<T[]>());
+	element_ptr = std::shared_ptr<T>(new T[m.rows * other.cols], std::default_delete<T[]>());
 	rows = m.rows;
 	cols = other.cols;
 	T *p = element_ptr.get();
@@ -220,7 +223,7 @@ bool aa::matrix<T>::operator==(const aa::matrix<T> &other) const
 		return false;
 	}
 	T *p = element_ptr.get();
-	T *q = m.element_ptr.get();
+	T *q = other.element_ptr.get();
 	for(unsigned int i = 0; i < rows; i++)
 	{
 		for(unsigned int j = 0; j < cols; j++)
@@ -262,14 +265,14 @@ aa::matrix<T> aa::matrix<T>::transpose() const
 	{
 		for(unsigned int j = 0; j < cols; j++)
 		{
-			p[j * rows + i] = q[i * cols + j]
+			p[j * rows + i] = q[i * cols + j];
 		}
 	}
 	return ret;
 }
 
 template<typename T>
-T *aa::matrix<T>::get_raw_ptr() const
+T *aa::matrix<T>::get_raw_ptr()
 {
 	return element_ptr.get();
 }
