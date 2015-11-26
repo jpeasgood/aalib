@@ -1,35 +1,26 @@
 #include "../headers/egl.h"
 
-aa::egl::egl(const aa::window &wnd)
+aa::egl::egl()
 {
-	EGLConfig ecfg;
 	EGLint attr[] = { EGL_BUFFER_SIZE, 24, EGL_NONE};
 	EGLint ctxattr[] = { EGL_CONTEXT_CLIENT_VERSION, 2, EGL_NONE };
 	if(!eglBindAPI(EGL_OPENGL_ES_API))
 	{
-		std::stringstream ss;
-		ss << "EGL failed to bind OPENGL ES.";
-		throw std::runtime_error(ss.str());
+		throw std::runtime_error("EGL failed to bind OPENGL ES.");
 	}
-	egl_display = eglGetDisplay(static_cast<EGLNativeDisplayType>(wnd.get_native_display()));
+	egl_display = eglGetDisplay(static_cast<EGLNativeDisplayType>(XOpenDisplay(0)));
 	if (egl_display == EGL_NO_DISPLAY)
 	{
-		std::stringstream ss;
-		ss << "Error getting EGL display.";
-		throw std::runtime_error(ss.str());
+		throw std::runtime_error("Error getting EGL display.");
 	}
 	if (!eglInitialize(egl_display, 0, 0))
 	{
-		std::stringstream ss;
-		ss << "Unable to initialize EGL.";
-		throw std::runtime_error(ss.str());
+		throw std::runtime_error("Unable to initialize EGL.");
 	}
 	EGLint num_config;
 	if(!eglChooseConfig(egl_display, attr, &ecfg, 1, &num_config))
 	{
-		std::stringstream ss;
-		ss << "Failed to choose config.";
-		throw std::runtime_error(ss.str());
+		throw std::runtime_error("Failed to choose config.");
 	}
 	if (num_config != 1)
 	{
@@ -37,25 +28,14 @@ aa::egl::egl(const aa::window &wnd)
 		ss << "Didn't get exactly one EGL config, but " << num_config << ".";
 		throw std::runtime_error(ss.str());
 	}
-	egl_surface = eglCreateWindowSurface(egl_display, ecfg, (EGLNativeWindowType)wnd.get_native_window_handle(), NULL);
-	if (egl_surface == EGL_NO_SURFACE)
-	{
-		std::stringstream ss;
-		ss << "Unable to create EGL surface.";
-		throw std::runtime_error(ss.str());
-	}
 	egl_context = eglCreateContext(egl_display, ecfg, EGL_NO_CONTEXT, ctxattr);
 	if (egl_context == EGL_NO_CONTEXT)
 	{
-		std::stringstream ss;
-		ss << "Unable to create EGL context.";
-		throw std::runtime_error(ss.str());
+		throw std::runtime_error("Unable to create EGL context.");
 	}
-	if(!eglMakeCurrent(egl_display, egl_surface, egl_surface, egl_context))
+	if(!eglMakeCurrent(egl_display, EGL_NO_SURFACE, EGL_NO_SURFACE, egl_context))
 	{
-		std::stringstream ss;
-		ss << "Unable to attach the EGL rendering context to the EGL surface.";
-		throw std::runtime_error(ss.str());
+		throw std::runtime_error("Unable to attach the EGL rendering context to the EGL surface.");
 	}
 	glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
 }
@@ -63,8 +43,45 @@ aa::egl::egl(const aa::window &wnd)
 aa::egl::~egl()
 {
 	eglDestroyContext(egl_display, egl_context);
-	eglDestroySurface(egl_display, egl_surface);
 	eglTerminate(egl_display);
+}
+
+void aa::egl::set_viewport(int x, int y, unsigned int width, unsigned int height)
+{
+	glViewport(x, y, width, height);
+}
+
+void aa::egl::clear()
+{
+	glClear(GL_COLOR_BUFFER_BIT);
+}
+
+void aa::egl::draw_elements(unsigned int count)
+{
+	glDrawElements(GL_TRIANGLE_STRIP, count, GL_UNSIGNED_INT, 0);
+}
+
+void aa::egl::swap_buffers(aa::surface &surf)
+{
+	eglSwapBuffers(egl_display, surf.egl_surface);
+}
+
+void aa::egl::make_surface_current(aa::surface &surf)
+{
+	if(!eglMakeCurrent(egl_display, surf.egl_surface, surf.egl_surface, egl_context))
+	{
+		throw std::runtime_error("Unable to attach the EGL rendering context to the EGL surface.");
+	}
+}
+
+aa::surface aa::egl::create_window_surface(const window &wnd)
+{
+	EGLSurface egl_surface = eglCreateWindowSurface(egl_display, ecfg, (EGLNativeWindowType)wnd.get_native_window_handle(), 0);
+	if (egl_surface == EGL_NO_SURFACE)
+	{
+		throw std::runtime_error("Unable to create EGL surface.");
+	}
+	return aa::surface(egl_display, egl_surface);
 }
 
 aa::texture aa::egl::create_texture(unsigned int width, unsigned int height)
@@ -79,21 +96,9 @@ aa::texture aa::egl::create_texture(unsigned int width, unsigned int height)
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
 
 	glTexImage2D(GL_TEXTURE_2D, 0, GL_LUMINANCE_ALPHA, width,
-			height, 0, GL_LUMINANCE_ALPHA, GL_UNSIGNED_BYTE, NULL);
+			height, 0, GL_LUMINANCE_ALPHA, GL_UNSIGNED_BYTE, 0);
 
-	return texture(texture_id);
-}
-
-void aa::egl::bind_texture(const texture &tex)
-{
-	switch(tex.type)
-	{
-		case aa::texture::texture_type::TEXTURE_2D:
-			glBindTexture(GL_TEXTURE_2D, tex.id);
-			break;
-		//error
-	}
-
+	return aa::texture(texture_id, width, height);
 }
 
 aa::shader aa::egl::create_shader(aa::shader::shader_type type, const std::string &source)
@@ -132,7 +137,9 @@ aa::program aa::egl::create_program(const aa::shader &vertex_shader, const aa::s
 	return program(program_id);
 }
 
-void aa::egl::use_program(const program &prog)
+aa::buffer aa::egl::create_buffer(buffer::buffer_type type)
 {
-	glUseProgram(prog.id);
+	GLuint buffer_id;
+	glGenBuffers(1, &buffer_id);
+	return aa::buffer(buffer_id, type);
 }

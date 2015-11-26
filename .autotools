@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <configurations>
-<configuration id="cdt.managedbuild.config.gnu.exe.debug.392003803">
+<configuration id="cdt.managedbuild.config.gnu.exe.debug.1033619322">
 <option id="configure" value="configure"/>
 <option id="configdir" value=""/>
 <option id="cache-file" value=""/>
@@ -39,7 +39,7 @@
 <option id="autogen" value="autogen.sh"/>
 <option id="autogenOpts" value=""/>
 </configuration>
-<configuration id="cdt.managedbuild.config.gnu.exe.release.378957437">
+<configuration id="cdt.managedbuild.config.gnu.exe.release.1450668130">
 <option id="configure" value="configure"/>
 <option id="configdir" value=""/>
 <option id="cache-file" value=""/>

@@ -15,8 +15,10 @@ namespace aa
 		private:
 			GLuint id;
 			texture_type type;
+			unsigned int width;
+			unsigned int height;
 
-			texture(GLuint id);
+			texture(GLuint id, unsigned int width, unsigned int height);
 
 		public:
 			texture(const texture &other) = delete;
@@ -25,6 +27,9 @@ namespace aa
 
 			texture &operator=(const texture &other) = delete;
 			texture &operator=(texture &&other) = default;
+
+			void set(const void *data);
+			void bind();
 	};
 }
 

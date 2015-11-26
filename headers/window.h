@@ -17,6 +17,8 @@ namespace aa
 			Display *display;
 			Window wnd;
 
+			signal<void(int x, int y, int width, int height)> expose_signal;
+
 			void fd_selected() final;
 
 		public:
@@ -29,6 +31,10 @@ namespace aa
 			int get_fd() const final;
 			Display *get_native_display() const;
 			Window get_native_window_handle() const;
+
+			connection<void(int x, int y, int width, int height)> connect_expose(
+					const std::function<void(int x, int y, int width, int height)> &func);
+			void expose();
 	};
 }
 

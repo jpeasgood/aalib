@@ -27,7 +27,7 @@ namespace aa
 			matrix<T> &operator=(matrix<T> &&other) = default;
 
 			vector<T> operator[](unsigned int i) const;
-			vector<T> &operator[](unsigned int i);
+			vector<T> operator[](unsigned int i);
 
 			matrix<T> operator+(const matrix<T> &other) const;
 			matrix<T> operator-(const matrix<T> &other) const;
@@ -45,6 +45,9 @@ namespace aa
 			matrix<T> transpose() const;
 			T *get_raw_ptr();
 	};
+
+	template<typename T>
+	matrix<T> ortho_matrix(T left, T right, T bottom, T top, T near, T far);
 }
 
 template<typename T>
@@ -113,9 +116,9 @@ aa::vector<T> aa::matrix<T>::operator[](unsigned int i) const
 }
 
 template<typename T>
-aa::vector<T> &aa::matrix<T>::operator[](unsigned int i)
+aa::vector<T> aa::matrix<T>::operator[](unsigned int i)
 {
-	return vector<T>(element_ptr, i * rows, rows);
+	return aa::vector<T>(element_ptr, i * rows, rows);
 }
 
 template<typename T>
@@ -275,6 +278,35 @@ template<typename T>
 T *aa::matrix<T>::get_raw_ptr()
 {
 	return element_ptr.get();
+}
+
+template<typename T>
+aa::matrix<T> ortho_matrix(T left, T right, T bottom, T top, T near, T far)
+{
+	aa::matrix<T> res(4, 4);
+	T r_l = right - left;
+	T t_b = top - bottom;
+	T f_n = far - near;
+	T tx = - (right + left) / (right - left);
+	T ty = - (top + bottom) / (top - bottom);
+	T tz = (far + near) / (far - near);
+	res[0][0] = 2.0f / r_l;
+	res[0][1] = 0.0f;
+	res[0][2] = 0.0f;
+	res[0][3] = 0.0f;
+	res[1][0] = 0.0f;
+	res[1][1] = 2.0f / t_b;
+	res[1][2] = 0.0f;
+	res[1][3] = 0.0;
+	res[2][0] = 0.0f;
+	res[2][1] = 0.0f;
+	res[2][2] = 2.0f / f_n;
+	res[2][3] = 0.0;
+	res[3][0] = tx;
+	res[3][1] = ty;
+	res[3][2] = tz;
+	res[3][3] = 1.0f;
+	return res;
 }
 
 #endif

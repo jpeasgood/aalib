@@ -1,5 +1,5 @@
-#ifndef AA_WEB_CAM_H
-#define AA_WEB_CAM_H
+#ifndef AA_CAMERA_H
+#define AA_CAMERA_H
 
 #include "../headers/file_descriptor_interface.h"
 
@@ -18,10 +18,10 @@
 
 namespace aa
 {
-	class web_cam : public file_descriptor_interface
+	class camera : public file_descriptor_interface
 	{
 		public:
-			struct web_cam_format
+			struct camera_format
 			{
 				unsigned int pixel_format;
 				unsigned int width;
@@ -40,7 +40,7 @@ namespace aa
 
 			int device_fd;
 			std::string device_name;
-			web_cam_format format;
+			camera_format format;
 			buffer *buffers;
 			unsigned int num_buffers;
 			signal<void(const void *, size_t)> process_frame_signal;
@@ -52,13 +52,13 @@ namespace aa
 
 		public:
 			static std::list<std::string> get_devices();
-			static std::list<web_cam_format> get_supported_formats(const std::string &device_name);
+			static std::list<camera_format> get_supported_formats(const std::string &device_name);
 
-			web_cam(const web_cam &other) = delete;
-			web_cam(const std::string &device_name, const web_cam_format &format);
-			~web_cam();
+			camera(const camera &other) = delete;
+			camera(const std::string &device_name, const camera_format &format);
+			~camera();
 
-			web_cam &operator=(const web_cam &other) = delete;
+			camera &operator=(const camera &other) = delete;
 
 			void start_capturing();
 			void stop_capturing();

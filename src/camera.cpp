@@ -1,6 +1,6 @@
-#include "../headers/web_cam.h"
+#include "../headers/camera.h"
 
-int aa::web_cam::xioctl(int device, int request, void *arg)
+int aa::camera::xioctl(int device, int request, void *arg)
 {
 	int r;
 	do
@@ -9,8 +9,8 @@ int aa::web_cam::xioctl(int device, int request, void *arg)
 	} while (-1 == r && EINTR == errno);
 	return r;
 }
-#include <iostream>
-void aa::web_cam::fd_selected()
+
+void aa::camera::fd_selected()
 {
 	v4l2_buffer buf = {};
 
@@ -33,8 +33,7 @@ void aa::web_cam::fd_selected()
 		}
 	}
 
-	//do stuff with the buffer
-	std::cout << "do stuff with the buffer" << std::endl;
+	this->process_frame_signal(buffers[buf.index].start, buf.bytesused);
 
 	if (-1 == xioctl(device_fd, VIDIOC_QBUF, &buf))
 	{
@@ -44,10 +43,10 @@ void aa::web_cam::fd_selected()
 	}
 }
 
-std::list<std::string> aa::web_cam::get_devices()
+std::list<std::string> aa::camera::get_devices()
 {
 	std::list<std::string> ret;
-	std::regex reg("video[0-9]+", std::regex_constants::basic);
+	std::regex reg("video[0-9]+");
 	typedef std::unique_ptr<DIR, std::function<decltype(closedir)>> dir_ptr;
 	if(dir_ptr dir = dir_ptr(opendir("/dev/"), closedir))
 	{
@@ -55,11 +54,11 @@ std::list<std::string> aa::web_cam::get_devices()
 		for(auto* p = &e; 0 == readdir_r(dir.get(), &e, &p) && p; )
 		{
 			std::string file_name(e.d_name);
-			if(std::regex_match(file_name.begin(), file_name.end(), reg))
+			if(std::regex_match(file_name, reg))
 			{
 				std::stringstream ss;
 				ss << "/dev/" << e.d_name;
-				int fd = open(ss.str().c_str(),  O_RDONLY);
+				int fd = open(ss.str().c_str(), O_RDONLY);
 				if(-1 != fd)
 				{
 					v4l2_capability cap;
@@ -77,9 +76,9 @@ std::list<std::string> aa::web_cam::get_devices()
 	return ret;
 }
 
-std::list<aa::web_cam::web_cam_format> aa::web_cam::get_supported_formats(const std::string &device_name)
+std::list<aa::camera::camera_format> aa::camera::get_supported_formats(const std::string &device_name)
 {
-	std::list<web_cam_format> ret;
+	std::list<camera_format> ret;
 	int fd = open(device_name.c_str(),  O_RDONLY);
 	if(-1 != fd)
 	{
@@ -87,7 +86,7 @@ std::list<aa::web_cam::web_cam_format> aa::web_cam::get_supported_formats(const 
 		pixel_format.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
 		while (xioctl(fd, VIDIOC_ENUM_FMT, &pixel_format) == 0)
 		{
-			aa::web_cam::web_cam_format supported_format;
+			aa::camera::camera_format supported_format;
 			supported_format.pixel_format = pixel_format.pixelformat;
 			v4l2_frmsizeenum frame_size = {};
 			frame_size.pixel_format = pixel_format.pixelformat;
@@ -137,7 +136,7 @@ std::list<aa::web_cam::web_cam_format> aa::web_cam::get_supported_formats(const 
 	return ret;
 }
 
-aa::web_cam::web_cam(const std::string &device_name, const aa::web_cam::web_cam_format &format) : device_name(device_name), format(format)
+aa::camera::camera(const std::string &device_name, const aa::camera::camera_format &format) : device_name(device_name), format(format)
 {
 	device_fd = open(device_name.c_str(), O_RDWR | O_NONBLOCK, 0);
 	if (-1 == device_fd)
@@ -149,7 +148,7 @@ aa::web_cam::web_cam(const std::string &device_name, const aa::web_cam::web_cam_
 	init_device();
 }
 
-aa::web_cam::~web_cam()
+aa::camera::~camera()
 {
 	uninit_device();
 	if(-1 == close(device_fd))
@@ -160,7 +159,7 @@ aa::web_cam::~web_cam()
 	}
 }
 
-void aa::web_cam::init_device()
+void aa::camera::init_device()
 {
 	v4l2_capability cap;
 	v4l2_format fmt;
@@ -201,6 +200,7 @@ void aa::web_cam::init_device()
 	fmt.fmt.pix.width = format.width;
 	fmt.fmt.pix.height = format.height;
 	fmt.fmt.pix.pixelformat = format.pixel_format;
+	fmt.fmt.pix.field = V4L2_FIELD_INTERLACED;
 
 	if (-1 == xioctl(device_fd, VIDIOC_S_FMT, &fmt))
 	{
@@ -212,7 +212,7 @@ void aa::web_cam::init_device()
 	init_mmap();
 }
 
-void aa::web_cam::init_mmap()
+void aa::camera::init_mmap()
 {
 	v4l2_requestbuffers req = {};
 	req.count = 4;
@@ -264,7 +264,7 @@ void aa::web_cam::init_mmap()
 		}
 
 		buffers[num_buffers].length = buf.length;
-		buffers[num_buffers].start = mmap(NULL, buf.length, PROT_READ | PROT_WRITE, MAP_SHARED, device_fd, buf.m.offset);
+		buffers[num_buffers].start = mmap(0, buf.length, PROT_READ | PROT_WRITE, MAP_SHARED, device_fd, buf.m.offset);
 
 		if (MAP_FAILED == buffers[num_buffers].start)
 		{
@@ -275,7 +275,7 @@ void aa::web_cam::init_mmap()
 	}
 }
 
-void aa::web_cam::uninit_device()
+void aa::camera::uninit_device()
 {
 	for (unsigned int i = 0; i < num_buffers; ++i)
 	{
@@ -289,7 +289,7 @@ void aa::web_cam::uninit_device()
 	free(buffers);
 }
 
-void aa::web_cam::start_capturing()
+void aa::camera::start_capturing()
 {
 	v4l2_buf_type type;
 
@@ -318,7 +318,7 @@ void aa::web_cam::start_capturing()
 	}
 }
 
-void aa::web_cam::stop_capturing()
+void aa::camera::stop_capturing()
 {
 	v4l2_buf_type type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
 	if (-1 == xioctl(device_fd, VIDIOC_STREAMOFF, &type))
@@ -329,12 +329,12 @@ void aa::web_cam::stop_capturing()
 	}
 }
 
-int aa::web_cam::get_fd() const
+int aa::camera::get_fd() const
 {
 	return device_fd;
 }
 
-aa::connection<void(const void *, size_t)> aa::web_cam::connect_process_frame(const std::function<void(const void *, size_t)> &func)
+aa::connection<void(const void *, size_t)> aa::camera::connect_process_frame(const std::function<void(const void *, size_t)> &func)
 {
 	return process_frame_signal.connect(func);
 }

@@ -6,13 +6,13 @@
 void aa::window::fd_selected()
 {
 	XEvent event;
-	while (XPending(display))
+	while(XCheckWindowEvent(display, wnd, ExposureMask, &event))
 	{
-		XNextEvent(display, &event);
-		if (event.type == Expose)
+		switch(event.type)
 		{
-			XFillRectangle(display, wnd, DefaultGC(display, DefaultScreen(display)), 20, 20, 10, 10);
-			XDrawString(display, wnd, DefaultGC(display, DefaultScreen(display)), 10, 50, "Hello", strlen("Hello"));
+			case Expose:
+				expose_signal(event.xexpose.x, event.xexpose.y, event.xexpose.width, event.xexpose.height);
+				break;
 		}
 	}
 }
@@ -54,4 +54,25 @@ Display *aa::window::get_native_display() const
 Window aa::window::get_native_window_handle() const
 {
 	return wnd;
+}
+
+aa::connection<void(int x, int y, int width, int height)> aa::window::connect_expose(
+					const std::function<void(int x, int y, int width, int height)> &func)
+{
+	return expose_signal.connect(func);
+}
+
+void aa::window::expose()
+{
+	XWindowAttributes gwa;
+	XGetWindowAttributes(display, wnd, &gwa);
+	XEvent event = { };
+	event.type = Expose;
+	event.xexpose.window = wnd;
+	event.xexpose.x = gwa.x;
+	event.xexpose.y = gwa.y;
+	event.xexpose.width = gwa.width;
+	event.xexpose.height = gwa.height;
+	XSendEvent(display, wnd, 0, ExposureMask, &event);
+	XFlush(display);
 }
