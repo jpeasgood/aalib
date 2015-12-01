@@ -29,3 +29,13 @@ void aa::texture::bind()
 		//error
 	}
 }
+
+unsigned int aa::texture::get_width() const
+{
+	return width;
+}
+
+unsigned int aa::texture::get_height() const
+{
+	return height;
+}

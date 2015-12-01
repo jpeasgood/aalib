@@ -1,15 +1,19 @@
 #include "../headers/shader.h"
 
-aa::shader::shader(shader_type type, GLuint id) : type(type), id(id)
+aa::vertex_shader::vertex_shader(GLuint id) : id(id)
 {
 }
 
-aa::shader::~shader()
+aa::vertex_shader::~vertex_shader()
 {
 	glDeleteShader(id);
 }
 
-aa::shader::shader_type aa::shader::get_type()
+aa::fragment_shader::fragment_shader(GLuint id) : id(id)
 {
-	return type;
+}
+
+aa::fragment_shader::~fragment_shader()
+{
+	glDeleteShader(id);
 }

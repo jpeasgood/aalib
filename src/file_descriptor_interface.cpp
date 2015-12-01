@@ -7,6 +7,11 @@ aa::file_descriptor_interface::file_descriptor_interface()
 
 aa::file_descriptor_interface::~file_descriptor_interface()
 {
+	disconnect();
+}
+
+void aa::file_descriptor_interface::disconnect()
+{
 	if(fd_connection)
 	{
 		fd_connection->disconnect();

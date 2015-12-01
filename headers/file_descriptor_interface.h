@@ -1,5 +1,5 @@
-#ifndef AA_FILE_DESCRIPTOR_INTERFACE
-#define AA_FILE_DESCRIPTOR_INTERFACE
+#ifndef AA_FILE_DESCRIPTOR_INTERFACE_H
+#define AA_FILE_DESCRIPTOR_INTERFACE_H
 
 #include "../headers/signal.h"
 
@@ -23,6 +23,7 @@ namespace aa
 			file_descriptor_interface();
 			virtual ~file_descriptor_interface();
 			virtual int get_fd() const = 0;
+			void disconnect();
 	};
 }
 

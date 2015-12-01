@@ -1,7 +1,17 @@
 #include "../headers/egl.h"
 
+void check_gl_error()
+{
+	int err = glGetError();
+	if (err)
+	{
+		std::cout << "Open GL error: " << err << "." << std::endl;
+	}
+}
+
 aa::egl::egl()
 {
+	std::cout << "init" << std::endl;
 	EGLint attr[] = { EGL_BUFFER_SIZE, 24, EGL_NONE};
 	EGLint ctxattr[] = { EGL_CONTEXT_CLIENT_VERSION, 2, EGL_NONE };
 	if(!eglBindAPI(EGL_OPENGL_ES_API))
@@ -38,6 +48,7 @@ aa::egl::egl()
 		throw std::runtime_error("Unable to attach the EGL rendering context to the EGL surface.");
 	}
 	glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
+	check_gl_error();
 }
 
 aa::egl::~egl()
@@ -74,6 +85,16 @@ void aa::egl::make_surface_current(aa::surface &surf)
 	}
 }
 
+void aa::egl::flush()
+{
+	glFlush();
+}
+
+void aa::egl::activate_texture(unsigned int i)
+{
+	glActiveTexture(GL_TEXTURE0 + i);
+}
+
 aa::surface aa::egl::create_window_surface(const window &wnd)
 {
 	EGLSurface egl_surface = eglCreateWindowSurface(egl_display, ecfg, (EGLNativeWindowType)wnd.get_native_window_handle(), 0);
@@ -101,39 +122,74 @@ aa::texture aa::egl::create_texture(unsigned int width, unsigned int height)
 	return aa::texture(texture_id, width, height);
 }
 
-aa::shader aa::egl::create_shader(aa::shader::shader_type type, const std::string &source)
+aa::vertex_shader aa::egl::create_vertex_shader(const std::string &source)
 {
-	GLuint shader_id;
-	switch(type)
-	{
-		case aa::shader::shader_type::VERTEX_SHADER:
-			shader_id = glCreateShader(GL_VERTEX_SHADER);
-			break;
-		case aa::shader::shader_type::FRAGMENT_SHADER:
-			shader_id = glCreateShader(GL_FRAGMENT_SHADER);
-			break;
-		//error
-	}
+	GLuint shader_id = glCreateShader(GL_VERTEX_SHADER);
+	std::cout << shader_id << std::endl;
 	const char *c_source = source.c_str();
 	glShaderSource(shader_id, 1, &c_source, 0);
 	glCompileShader(shader_id);
-	return shader(type, shader_id);
+	GLint compiled = 0;
+	glGetShaderiv(shader_id, GL_COMPILE_STATUS, &compiled);
+	if(compiled == GL_FALSE)
+	{
+		GLint length = 0;
+		glGetShaderiv(shader_id, GL_INFO_LOG_LENGTH, &length);
+		std::vector<GLchar> error(length);
+		glGetShaderInfoLog(shader_id, length, &length, &error[0]);
+		throw std::runtime_error(&error[0]);
+	}
+	std::cout << "vert" << std::endl;
+	check_gl_error();
+	return vertex_shader(shader_id);
 }
 
-aa::program aa::egl::create_program(const aa::shader &vertex_shader, const aa::shader &fragment_shader)
+aa::fragment_shader aa::egl::create_fragment_shader(const std::string &source)
 {
-	if(vertex_shader.type != aa::shader::shader_type::VERTEX_SHADER)
+	GLuint shader_id = glCreateShader(GL_FRAGMENT_SHADER);
+	const char *c_source = source.c_str();
+	glShaderSource(shader_id, 1, &c_source, 0);
+	glCompileShader(shader_id);
+	GLint compiled = 0;
+	glGetShaderiv(shader_id, GL_COMPILE_STATUS, &compiled);
+	if(compiled == GL_FALSE)
 	{
-		throw std::runtime_error("vertex_shader is not a vertex shader");
+		GLint length = 0;
+		glGetShaderiv(shader_id, GL_INFO_LOG_LENGTH, &length);
+		std::vector<GLchar> error(length);
+		glGetShaderInfoLog(shader_id, length, &length, &error[0]);
+		throw std::runtime_error(&error[0]);
 	}
-	if(fragment_shader.type != aa::shader::shader_type::FRAGMENT_SHADER)
-	{
-		throw std::runtime_error("fragment_shader is not a fragment shader");
-	}
+	std::cout << "frag" << std::endl;
+	check_gl_error();
+	return fragment_shader(shader_id);
+}
+
+aa::program aa::egl::create_program(const aa::vertex_shader &vertex_shader, const aa::fragment_shader &fragment_shader)
+{
 	GLuint program_id = glCreateProgram();
+	std::cout << program_id << std::endl;
+	check_gl_error();
+	std::cout << vertex_shader.id << std::endl;
+	std::cout << fragment_shader.id << std::endl;
 	glAttachShader(program_id, vertex_shader.id);
+	check_gl_error();
 	glAttachShader(program_id, fragment_shader.id);
+	check_gl_error();
 	glLinkProgram (program_id);
+	GLint linked = 0;
+	glGetProgramiv(program_id, GL_LINK_STATUS, &linked);
+	check_gl_error();
+	if(linked == GL_FALSE)
+	{
+		GLint length = 0;
+		glGetProgramiv(program_id, GL_INFO_LOG_LENGTH, &length);
+		std::vector<GLchar> error(length);
+		glGetProgramInfoLog(program_id, length, &length, &error[0]);
+		throw std::runtime_error(&error[0]);
+	}
+	std::cout << "prog" << std::endl;
+	check_gl_error();
 	return program(program_id);
 }
 

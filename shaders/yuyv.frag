@@ -4,13 +4,13 @@ uniform sampler2D tex;
 uniform float texl_w;
 uniform float tex_w;
 
-varying vec2 texCoordOut;
+varying vec2 tex_coord_out;
 
 void main()
 {
 	float y, u, v;
-	float pixelx = texCoordOut.x;
-	float pixely = texCoordOut.y;
+	float pixelx = tex_coord_out.x;
+	float pixely = tex_coord_out.y;
 	float xcoord = floor(pixelx * tex_w);
 	vec4 luma_chroma = texture2D(tex, vec2(pixelx, pixely));
 	y = (luma_chroma.r - 0.0625) * 1.1643;

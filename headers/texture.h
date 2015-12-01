@@ -30,6 +30,8 @@ namespace aa
 
 			void set(const void *data);
 			void bind();
+			unsigned int get_width() const;
+			unsigned int get_height() const;
 	};
 }
 

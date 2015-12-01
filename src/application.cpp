@@ -47,6 +47,16 @@ void aa::application::main_loop()
 aa::application::application()
 {
 	running = false;
+	display = XOpenDisplay(0);
+	if (!display)
+	{
+		throw std::runtime_error("Cannot connect to X server.");
+	}
+}
+
+aa::application::~application()
+{
+	XCloseDisplay(display);
 }
 
 void aa::application::run()
@@ -73,4 +83,9 @@ void aa::application::set_file_descriptor(aa::file_descriptor_interface &fd_clas
 	}
 	fd_class.fd_connection = std::make_unique<aa::connection<void()>>(
 			std::move(it->second.connect(std::bind(std::mem_fn(&file_descriptor_interface::fd_selected), &fd_class))));
+}
+
+Display *aa::application::get_native_display() const
+{
+	return display;
 }

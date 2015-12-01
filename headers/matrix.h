@@ -281,7 +281,7 @@ T *aa::matrix<T>::get_raw_ptr()
 }
 
 template<typename T>
-aa::matrix<T> ortho_matrix(T left, T right, T bottom, T top, T near, T far)
+aa::matrix<T> aa::ortho_matrix(T left, T right, T bottom, T top, T near, T far)
 {
 	aa::matrix<T> res(4, 4);
 	T r_l = right - left;

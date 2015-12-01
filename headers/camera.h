@@ -55,10 +55,12 @@ namespace aa
 			static std::list<camera_format> get_supported_formats(const std::string &device_name);
 
 			camera(const camera &other) = delete;
+			camera(camera &&other) = default;
 			camera(const std::string &device_name, const camera_format &format);
 			~camera();
 
 			camera &operator=(const camera &other) = delete;
+			camera &operator=(camera &&other) = default;
 
 			void start_capturing();
 			void stop_capturing();
